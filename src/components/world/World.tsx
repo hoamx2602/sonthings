@@ -11,15 +11,18 @@ import { currentStreak, todayStr } from "@/lib/stats";
 import type { IslandId } from "@/lib/types";
 import { Bridge, Cloud, type V3 } from "./parts";
 import { ArenaIsland, DecoIsland, HubIsland, SoonIsland } from "./islands";
+import { RaceIsland } from "./RaceIsland";
 
-type IslandDef = { id: IslandId; pos: V3; r: number; label: string; emoji: string; dot: string; soon?: boolean };
+type IslandDef = { id: IslandId; pos: V3; r: number; label: string; emoji: string; dot: string; soon?: boolean; labelY: number; bridge?: boolean };
 
 const ISLANDS: IslandDef[] = [
-  { id: "hub", pos: [0, 0, 0], r: 6, label: "Nhà của", emoji: "🏰", dot: "#e94b6b" },
-  { id: "arena", pos: [-12.5, 0.8, 4.5], r: 4.6, label: "Đấu trường", emoji: "⚔️", dot: "#ffb703" },
-  { id: "moments", pos: [12, 1.4, -4], r: 3.2, label: "Khoảnh khắc", emoji: "📸", dot: "#ff7eb6", soon: true },
-  { id: "achievements", pos: [11, -0.4, 7.5], r: 3.2, label: "Thành tích", emoji: "🏆", dot: "#9b7bff", soon: true },
-  { id: "info", pos: [-9, 1.8, -10.5], r: 3.2, label: "Về con", emoji: "📒", dot: "#2ec4c4", soon: true },
+  { id: "hub", pos: [0, 0, 0], r: 6, label: "Nhà của", emoji: "🏰", dot: "#e94b6b", labelY: 5.4 },
+  { id: "arena", pos: [-12.5, 0.8, 4.5], r: 4.6, label: "Đấu trường", emoji: "⚔️", dot: "#ffb703", labelY: 3.6, bridge: true },
+  { id: "moments", pos: [12, 1.4, -4], r: 3.2, label: "Khoảnh khắc", emoji: "📸", dot: "#ff7eb6", soon: true, labelY: 2.9, bridge: true },
+  { id: "achievements", pos: [11, -0.4, 7.5], r: 3.2, label: "Thành tích", emoji: "🏆", dot: "#9b7bff", soon: true, labelY: 2.9, bridge: true },
+  { id: "info", pos: [-9, 1.8, -10.5], r: 3.2, label: "Về con", emoji: "📒", dot: "#2ec4c4", soon: true, labelY: 2.9, bridge: true },
+  // đảo xa, không có cầu
+  { id: "race", pos: [-23, -3, -18], r: 6.2, label: "Đường đua", emoji: "🏎️", dot: "#ff5d5d", labelY: 2.6 },
 ];
 
 const HOME_CAM = { pos: new THREE.Vector3(0, 19, 30), target: new THREE.Vector3(0, 0, 0) };
@@ -41,17 +44,28 @@ function CameraRig() {
   const goal = useRef<{ pos: THREE.Vector3; target: THREE.Vector3 } | null>(null);
   const offset = useRef(0);
 
+  // màn hình dọc/hẹp → lùi camera ra xa để vẫn thấy đủ các đảo
+  const aspect = size.width / Math.max(1, size.height);
+  const zoomOut = Math.max(1, Math.pow(1.55 / aspect, 0.75));
+  const scene = useThree((st) => st.scene);
+
   useEffect(() => {
     const isl = ISLANDS.find((i) => i.id === focus);
     if (!isl || isl.id === "hub") {
-      goal.current = { pos: HOME_CAM.pos.clone(), target: HOME_CAM.target.clone() };
+      goal.current = { pos: HOME_CAM.pos.clone().multiplyScalar(zoomOut), target: HOME_CAM.target.clone() };
       return;
     }
     const t = new THREE.Vector3(...isl.pos).add(new THREE.Vector3(0, 1, 0));
-    goal.current = { pos: t.clone().add(new THREE.Vector3(0, 7.5, 12)), target: t };
-  }, [focus]);
+    const k = (isl.r / 4.2) * Math.min(zoomOut, 1.6);
+    goal.current = { pos: t.clone().add(new THREE.Vector3(0, 7 * k, 11.5 * k)), target: t };
+  }, [focus, zoomOut]);
 
   useFrame((_, dt) => {
+    // sương mù lùi theo camera để cảnh không bị mờ trắng khi lùi xa
+    if (scene.fog instanceof THREE.Fog && scene.fog.near !== 50 * zoomOut) {
+      scene.fog.near = 50 * zoomOut;
+      scene.fog.far = 120 * zoomOut;
+    }
     // dịch khung hình: panel trái → đẩy cảnh sang phải và ngược lại
     const wide = size.width > 760;
     const panelW = Math.min(480, size.width * 0.45);
@@ -80,19 +94,46 @@ function CameraRig() {
 
 /** Các nhãn là DOM thường nằm trên canvas; LabelProjector cập nhật vị trí mỗi khung hình */
 const labelEls = new Map<string, HTMLDivElement>();
-const labelAnchor = (isl: IslandDef) => new THREE.Vector3(isl.pos[0], isl.pos[1] + (isl.id === "hub" ? 5.6 : 4.4), isl.pos[2]);
+const TOP_BAR = 84; // chiều cao thanh trên cùng
 
 function LabelProjector() {
-  const anchors = useMemo(() => ISLANDS.map((i) => [i.id, labelAnchor(i)] as const), []);
+  const anchors = useMemo(
+    () => ISLANDS.map((i) => ({ id: i.id, v: new THREE.Vector3(i.pos[0], i.pos[1] + i.labelY, i.pos[2]) })),
+    [],
+  );
   const v = useMemo(() => new THREE.Vector3(), []);
   useFrame(({ camera, size }) => {
-    for (const [id, a] of anchors) {
-      const el = labelEls.get(id);
+    const { focus, panel } = useApp.getState();
+    const items: { el: HTMLDivElement; x: number; y: number; w: number; h: number; z: number; id: IslandId }[] = [];
+    for (const a of anchors) {
+      const el = labelEls.get(a.id);
       if (!el) continue;
-      v.copy(a).project(camera);
-      const visible = v.z < 1;
-      el.style.opacity = visible ? "1" : "0";
-      el.style.transform = `translate3d(${((v.x + 1) / 2) * size.width}px, ${((1 - v.y) / 2) * size.height}px, 0) translate(-50%, -100%)`;
+      v.copy(a.v).project(camera);
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      const inView = Math.abs(v.x) < 1.02 && Math.abs(v.y) < 1.02;
+      // giữ nhãn nằm trọn trong màn hình (không bị cắt ở mép)
+      const x = THREE.MathUtils.clamp(((v.x + 1) / 2) * size.width - w / 2, 8, Math.max(8, size.width - w - 8));
+      const y = ((1 - v.y) / 2) * size.height - h;
+      el.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
+      items.push({ el, x, y, w, h, z: inView ? v.z : 2, id: a.id });
+    }
+    // đảo chính được ưu tiên, sau đó tới đảo gần camera; nhãn nào chồng lên nhãn đã đặt thì ẩn đi
+    const rank = (id: IslandId) => (id === focus ? 0 : id === "hub" ? 1 : id === "arena" ? 2 : id === "race" ? 3 : 4);
+    items.sort((p, q) => rank(p.id) - rank(q.id) || p.z - q.z);
+    const placed: typeof items = [];
+    const pad = 6;
+    for (const it of items) {
+      const focusOnly = panel !== null && focus && focus !== "hub" && it.id !== focus;
+      const off = it.z > 1 || it.y < TOP_BAR - it.h * 0.35 || it.y > size.height - 60;
+      const hit = placed.some((o) => it.x < o.x + o.w + pad && it.x + it.w + pad > o.x && it.y < o.y + o.h + pad && it.y + it.h + pad > o.y);
+      const show = !focusOnly && !off && !hit;
+      if (show) placed.push(it);
+      if (it.el.dataset.show !== String(show)) {
+        it.el.dataset.show = String(show);
+        it.el.style.opacity = show ? "1" : "0";
+        it.el.style.visibility = show ? "visible" : "hidden";
+      }
     }
   });
   return null;
@@ -108,7 +149,7 @@ function Label({ isl, bubble }: { isl: IslandDef; bubble?: string }) {
         if (el) labelEls.set(isl.id, el);
         else labelEls.delete(isl.id);
       }}
-      className="absolute left-0 top-0 flex flex-col items-center gap-1.5 opacity-0 will-change-transform select-none"
+      className="absolute left-0 top-0 flex flex-col items-center gap-1.5 opacity-0 transition-[opacity,visibility] duration-300 will-change-transform select-none"
     >
       {bubble && (
         <div className="bubble animate-floaty whitespace-nowrap rounded-2xl bg-[#fff7e6] px-3 py-1.5 text-sm font-semibold text-[#5b4a2f] shadow-md ring-2 ring-[#ffe2a8]">
@@ -136,7 +177,7 @@ function Labels() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {ISLANDS.map((isl) => (
-        <Label key={isl.id} isl={isl} bubble={isl.id === "arena" ? bubbles.arena : isl.id === "hub" ? bubbles.hub : isl.soon ? bubbles.soon : undefined} />
+        <Label key={isl.id} isl={isl} bubble={isl.id === "arena" ? bubbles.arena : isl.id === "hub" ? bubbles.hub : isl.id === "race" ? bubbles.race : isl.soon ? bubbles.soon : undefined} />
       ))}
     </div>
   );
@@ -195,6 +236,7 @@ function useBubbles() {
       arena: arena[tick % arena.length],
       hub: hub[tick % hub.length],
       soon: ["Đang xây nè~ 🔨", "Sắp xong rồi!", "Chờ chút nha~"][tick % 3],
+      race: ["Chạm vào xe để bấm còi! 📯", "Brừm brừm~ 🏎️", "Xe nào về nhất nhỉ? 🏁"][tick % 3],
     };
   }, [matches, members, tick]);
 }
@@ -235,10 +277,11 @@ function Scene() {
             {isl.id === "moments" && <SoonIsland kind="moments" seed={31} />}
             {isl.id === "achievements" && <SoonIsland kind="achievements" seed={41} />}
             {isl.id === "info" && <SoonIsland kind="info" seed={51} />}
+            {isl.id === "race" && <RaceIsland />}
           </Clickable>
         </group>
       ))}
-      {ISLANDS.slice(1).map((isl) => (
+      {ISLANDS.filter((i) => i.bridge).map((isl) => (
         <Bridge key={isl.id} from={edgePoint(hub, isl)} to={edgePoint(isl, hub)} />
       ))}
       <LabelProjector />
@@ -249,17 +292,17 @@ function Scene() {
       <group position={[-22, -1.5, -3]}>
         <DecoIsland radius={1.6} seed={71} />
       </group>
-      <group position={[21, -2.5, 0]}>
+      <group position={[19, -3.5, 13]}>
         <DecoIsland radius={1.4} seed={81} />
       </group>
       <group position={[-3, -5, 15]}>
         <DecoIsland radius={1.8} seed={91} />
       </group>
-      <group position={[-20, 2, -16]}>
+      <group position={[7, -4, -27]}>
         <DecoIsland radius={1.6} seed={101} building="tower" />
       </group>
 
-      <Cloud position={[-20, 6, -12]} scale={1.6} speed={0.4} seed={1} />
+      <Cloud position={[-34, 9, -24]} scale={1.6} speed={0.4} seed={1} />
       <Cloud position={[8, 8, -20]} scale={2.2} speed={0.25} seed={2} />
       <Cloud position={[18, 3, 10]} scale={1.3} speed={0.35} seed={3} />
       <Cloud position={[-6, -6, 8]} scale={2} speed={0.2} seed={4} />
@@ -297,7 +340,7 @@ export default function World() {
         enablePan={false}
         enableDamping
         minDistance={9}
-        maxDistance={50}
+        maxDistance={120}
         minPolarAngle={0.35}
         maxPolarAngle={Math.PI / 2.25}
         rotateSpeed={0.6}

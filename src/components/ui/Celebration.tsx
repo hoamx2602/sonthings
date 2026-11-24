@@ -61,7 +61,7 @@ export function Celebration() {
           {/* tia sáng xoay phía sau */}
           <div className="sunburst pointer-events-none absolute h-[900px] w-[900px] opacity-60" />
           <motion.div
-            className="relative flex w-full max-w-[560px] flex-col items-center rounded-[40px] bg-white px-6 pb-7 pt-4 text-center shadow-2xl ring-8 ring-white/60"
+            className="relative mt-24 flex max-h-[calc(100dvh-7rem)] w-full max-w-[560px] flex-col items-center rounded-[40px] bg-white px-6 pb-7 pt-4 text-center shadow-2xl ring-8 ring-white/60"
             initial={{ scale: 0.4, y: 80, rotate: -6 }}
             animate={{ scale: 1, y: 0, rotate: 0 }}
             exit={{ scale: 0.6, y: 60, opacity: 0 }}
@@ -80,7 +80,11 @@ export function Celebration() {
               </>
             ) : (
               <>
-                {info.tier && <Medal3D tier={info.tier} ribbon={m[info.winner].color} size={230} />}
+                {info.tier && (
+                  <div className="-mb-3 -mt-40">
+                    <Medal3D tier={info.tier} ribbon={m[info.winner].color} size={280} />
+                  </div>
+                )}
                 <motion.h2
                   className="-mt-2 text-[40px] font-black leading-tight"
                   style={{ color: m[info.winner].color, textShadow: "0 3px 0 rgba(0,0,0,.08)" }}

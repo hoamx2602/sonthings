@@ -55,8 +55,8 @@ function paint(g: THREE.BufferGeometry, color: (y: number, i: number) => THREE.C
 }
 
 /**
- * Đế đảo bay: mặt cỏ bo tròn mép + khối đất đá gồ ghề phía dưới.
- * Mặt cỏ nằm ở y = 0.
+ * Đế đảo bay: MỘT khối liền (mặt cỏ bo tròn mép + khối đất phía dưới)
+ * nên không bao giờ hở khe. Mặt cỏ nằm ở y = 0.
  */
 export function IslandBase({
   radius: R,
@@ -66,65 +66,57 @@ export function IslandBase({
 }: {
   radius: number;
   grass?: string;
-  dirt?: string;
   seed?: number;
   children?: ReactNode;
 }) {
-  const { cap, body } = useMemo(() => {
+  const geo = useMemo(() => {
     const edge = edgeNoise(seed);
-    const bevel = Math.min(0.45, R * 0.09);
-    // Mặt cỏ: phẳng → bo tròn mép → viền cỏ rủ xuống
-    const capPts: [number, number][] = [[0, 0]];
-    for (let i = 0; i <= 10; i++) {
-      const t = (i / 10) * (Math.PI / 2);
-      capPts.push([R - bevel + Math.sin(t) * bevel, -bevel + Math.cos(t) * bevel]);
+    const bevel = Math.min(0.5, R * 0.1);
+    const grassLine = -bevel - 0.2; // ranh giới cỏ / đất
+    const pts: [number, number][] = [[0, 0]];
+    // mặt trên phẳng rồi bo tròn mép
+    for (let i = 0; i <= 12; i++) {
+      const t = (i / 12) * (Math.PI / 2);
+      pts.push([R - bevel + Math.sin(t) * bevel, -bevel + Math.cos(t) * bevel]);
     }
-    capPts.push([R * 0.995, -bevel - 0.18], [R * 0.97, -bevel - 0.32], [R * 0.93, -bevel - 0.36]);
-    const radial = (x: number, y: number, z: number, a: number): [number, number, number] => {
-      const k = edge(a);
-      return [x * k, y, z * k];
-    };
-    const cap = paint(lathe(capPts, 96, radial), (y) => {
-      const top = new THREE.Color(grass);
-      const side = new THREE.Color(grass).offsetHSL(0.01, 0.02, -0.12);
-      return top.lerp(side, THREE.MathUtils.clamp(-y / (bevel + 0.3), 0, 1));
-    });
-
-    // Khối đất: thuôn dần xuống thành chóp, có gồ ghề theo góc và độ sâu
-    const depth = R * 0.95 + 1.2;
-    const bodyPts: [number, number][] = [];
-    const steps = 14;
-    for (let i = 0; i <= steps; i++) {
+    // viền cỏ, rồi lớp đất ngay dưới (hai hàng sát nhau để ranh giới sắc nét)
+    pts.push([R * 0.998, grassLine + 0.02], [R * 0.994, grassLine - 0.02]);
+    // khối đất thuôn tròn xuống dưới
+    const depth = R * 0.85 + 1.4;
+    const steps = 22;
+    for (let i = 1; i <= steps; i++) {
       const t = i / steps;
-      const y = -bevel - 0.3 - t * depth;
-      const r = R * 0.94 * Math.pow(1 - t, 0.85) * (1 - 0.12 * Math.sin(t * Math.PI));
-      bodyPts.push([Math.max(r, 0.001), y]);
+      const y = grassLine - 0.02 - t * depth;
+      const r = R * 0.99 * Math.pow(1 - t, 0.75) * (1 + 0.06 * Math.sin(t * Math.PI));
+      pts.push([Math.max(r, 0.02), y]);
     }
+    pts.push([0, grassLine - depth - 0.12]);
+
     const rr = rng(seed + 7);
     const ph = [rr() * 6, rr() * 6, rr() * 6];
-    const body = paint(
-      lathe(bodyPts, 48, (x, y, z, a) => {
-        const k = edge(a) * (1 + 0.07 * Math.sin(5 * a + y * 1.7 + ph[0]) + 0.05 * Math.sin(9 * a - y * 2.3 + ph[1]) + 0.03 * Math.sin(y * 4 + ph[2]));
-        return [x * k, y, z * k];
-      }),
-      (y) => {
-        const t = THREE.MathUtils.clamp(-y / (depth + 0.6), 0, 1);
-        const c = new THREE.Color("#e0a46c").lerp(new THREE.Color("#8d5a3b"), t);
-        // các lớp đá
-        const band = 0.5 + 0.5 * Math.sin(y * 3.2);
-        return c.offsetHSL(0, 0, (band - 0.5) * 0.06);
-      },
-    );
-    return { cap, body };
+    const g = lathe(pts, 112, (x, y, z, a) => {
+      // gồ ghề chỉ tăng dần theo độ sâu → mép trên luôn khớp với mặt cỏ
+      const d = THREE.MathUtils.clamp((grassLine - 0.1 - y) / 1.2, 0, 1);
+      const bump = 0.06 * Math.sin(5 * a + y * 1.6 + ph[0]) + 0.04 * Math.sin(9 * a - y * 2.1 + ph[1]) + 0.025 * Math.sin(y * 4.5 + ph[2]);
+      const k = edge(a) * (1 + bump * d - 0.02 * d);
+      return [x * k, y, z * k];
+    });
+    const top = new THREE.Color(grass);
+    const side = new THREE.Color(grass).offsetHSL(0.01, 0.02, -0.1);
+    const dirtTop = new THREE.Color("#e2a873");
+    const dirtBottom = new THREE.Color("#8f5d3e");
+    return paint(g, (y) => {
+      if (y > grassLine) return top.clone().lerp(side, THREE.MathUtils.clamp(-y / (bevel + 0.2), 0, 1));
+      const t = THREE.MathUtils.clamp((grassLine - y) / depth, 0, 1);
+      const c = dirtTop.clone().lerp(dirtBottom, Math.pow(t, 0.8));
+      return c.offsetHSL(0, 0, 0.03 * Math.sin(y * 3.4)); // các lớp đá
+    });
   }, [R, grass, seed]);
 
   return (
     <group>
-      <mesh geometry={cap} receiveShadow castShadow>
-        <meshStandardMaterial vertexColors roughness={0.85} />
-      </mesh>
-      <mesh geometry={body} castShadow>
-        <meshStandardMaterial vertexColors roughness={0.95} />
+      <mesh geometry={geo} receiveShadow castShadow>
+        <meshStandardMaterial vertexColors roughness={0.88} />
       </mesh>
       {children}
     </group>

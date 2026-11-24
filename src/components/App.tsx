@@ -33,14 +33,14 @@ function TopBar() {
       initial={{ y: -90 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
-      className="fixed inset-x-0 top-0 z-50 flex h-[76px] items-center gap-3 px-3 sm:px-5"
+      className="fixed inset-x-0 top-0 z-50 flex h-[76px] items-center gap-2 px-3 sm:gap-3 sm:px-5"
     >
-      <button onClick={closePanel} className="flex items-center gap-2 rounded-full bg-white/90 py-1.5 pl-1.5 pr-4 shadow-lg backdrop-blur">
-        <Avatar who="son" color={m.son.color} size={46} />
-        <span className="hidden text-lg font-black text-[#2b2d42] sm:inline">Thế giới của {settings.childName}</span>
+      <button onClick={closePanel} className="flex shrink-0 items-center gap-2 rounded-full bg-white/90 p-1.5 shadow-lg backdrop-blur lg:pr-4">
+        <Avatar who="son" color={m.son.color} size={44} />
+        <span className="hidden max-w-[220px] truncate whitespace-nowrap text-lg font-black text-[#2b2d42] lg:inline">Thế giới của {settings.childName}</span>
       </button>
 
-      <nav className="mx-auto flex items-center gap-1 rounded-full bg-white/90 p-1.5 shadow-lg backdrop-blur">
+      <nav className="mx-auto flex min-w-0 items-center gap-0.5 rounded-full bg-white/90 p-1 shadow-lg backdrop-blur sm:gap-1 sm:p-1.5">
         <Chip onClick={() => openIsland("arena")} emoji="🏅" value={stats.medals} label="huy chương" />
         <Chip onClick={() => openIsland("arena")} emoji="🔥" value={stats.streak} label="ngày" hot={stats.streak >= 3} />
         <Chip onClick={() => openIsland("arena")} emoji="👑" value={stats.king ? m[stats.king].name : "—"} label="tuần này" />
@@ -49,11 +49,11 @@ function TopBar() {
       <button
         onClick={() => update((s) => ({ ...s, sound: { ...s.sound, music: !s.sound.music } }))}
         aria-label={musicOn ? "Tắt nhạc" : "Bật nhạc"}
-        className="grid h-14 w-14 place-items-center rounded-full bg-white/90 text-[#2b2d42] shadow-lg backdrop-blur transition hover:scale-105"
+        className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/90 text-[#2b2d42] shadow-lg backdrop-blur transition hover:scale-105 sm:h-14 sm:w-14"
       >
         {musicOn ? <Volume2 size={26} strokeWidth={2.5} /> : <VolumeX size={26} strokeWidth={2.5} />}
       </button>
-      <button onClick={openSettings} aria-label="Cài đặt" className="grid h-14 w-14 place-items-center rounded-full bg-[#2b2d42] text-white shadow-lg transition hover:rotate-45">
+      <button onClick={openSettings} aria-label="Cài đặt" className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#2b2d42] text-white shadow-lg transition hover:rotate-45 sm:h-14 sm:w-14">
         <Gear size={26} strokeWidth={2.5} />
       </button>
     </motion.header>
@@ -62,14 +62,14 @@ function TopBar() {
 
 function Chip({ emoji, value, label, onClick, hot }: { emoji: string; value: string | number; label: string; onClick: () => void; hot?: boolean }) {
   return (
-    <button onClick={onClick} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition hover:bg-[#f2f3f7] sm:px-4">
-      <motion.span className="text-2xl" animate={hot ? { scale: [1, 1.25, 1], rotate: [0, -8, 8, 0] } : undefined} transition={{ duration: 1.2, repeat: Infinity }}>
+    <button onClick={onClick} className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-1.5 transition hover:bg-[#f2f3f7] sm:gap-1.5 sm:px-3 xl:px-4">
+      <motion.span className="text-xl sm:text-2xl" animate={hot ? { scale: [1, 1.25, 1], rotate: [0, -8, 8, 0] } : undefined} transition={{ duration: 1.2, repeat: Infinity }}>
         {emoji}
       </motion.span>
-      <motion.span key={String(value)} initial={{ scale: 1.6, color: "#ffb703" }} animate={{ scale: 1, color: "#2b2d42" }} className="text-xl font-black">
+      <motion.span key={String(value)} initial={{ scale: 1.6, color: "#ffb703" }} animate={{ scale: 1, color: "#2b2d42" }} className="max-w-[64px] truncate text-lg font-black sm:text-xl">
         {value}
       </motion.span>
-      <span className="hidden text-sm font-bold text-[#8a8ea6] md:inline">{label}</span>
+      <span className="hidden text-sm font-bold text-[#8a8ea6] xl:inline">{label}</span>
     </button>
   );
 }
@@ -100,7 +100,7 @@ function StartScreen({ onStart }: { onStart: () => void }) {
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-        className="relative mt-6 px-4 text-center text-5xl font-black text-white sm:text-6xl"
+        className="relative mt-6 px-4 text-center text-4xl font-black text-white sm:text-6xl"
         style={{ textShadow: "0 4px 0 #3f8fd8, 0 10px 30px rgba(30,80,160,.35)" }}
       >
         Thế giới của {settings.childName}
@@ -193,7 +193,7 @@ function Hint() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 60, opacity: 0 }}
           transition={{ delay: 1.2 }}
-          className="pointer-events-none fixed bottom-6 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-white/90 px-5 py-3 text-lg font-bold text-[#4a4e69] shadow-lg"
+          className="pointer-events-none fixed bottom-6 left-1/2 z-30 w-max max-w-[calc(100vw-32px)] -translate-x-1/2 rounded-full bg-white/90 px-5 py-3 text-center text-base font-bold text-[#4a4e69] shadow-lg sm:text-lg"
         >
           👆 Chạm vào đảo để khám phá · Kéo để xoay
         </motion.div>

@@ -117,10 +117,10 @@ function Trophy({ position }: { position: V3 }) {
   const gold = <meshPhysicalMaterial color="#ffc93c" metalness={0.35} roughness={0.25} clearcoat={1} emissive="#b07800" emissiveIntensity={0.2} />;
   return (
     <group position={position}>
-      <RoundedBox args={[0.9, 0.5, 0.9]} radius={0.08} position={[0, 0.25, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color="#7a5af5" roughness={0.6} />
+      <RoundedBox args={[0.9, 0.9, 0.9]} radius={0.1} smoothness={4} position={[0, 0.45, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color="#7a5af5" roughness={0.5} />
       </RoundedBox>
-      <group position={[0, 0.5, 0]}>
+      <group position={[0, 0.9, 0]}>
         <Bob amp={0.1} speed={1.4} spin={0.6}>
           <group position={[0, 0.15, 0]}>
             <mesh castShadow>
@@ -216,9 +216,7 @@ export function ArenaIsland() {
           />
         </group>
       ))}
-      <Trophy position={[0, 0, -1.7]} />
-      <Village name="tent" position={[-3.3, 0, -0.6]} rotation={0.6} scale={1.8} />
-      <Village name="tent" position={[3.3, 0, -0.6]} rotation={-0.6} scale={1.8} />
+      <Trophy position={[0, 0, -2.35]} />
       <Village name="target" position={[-2.2, 0, 2.6]} rotation={0.5} scale={2.2} />
       <Village name="barrel" position={[2.6, 0, 2.3]} scale={2} />
       <Village name="crate_A_big" position={[2.95, 0, 2.0]} rotation={0.4} scale={2} />
@@ -278,22 +276,45 @@ function Camera3D() {
   );
 }
 
+/** Quyển sách bìa cứng dày, đứng nghiêng */
 function Book3D() {
   return (
-    <group rotation={[0.25, 0, 0]}>
-      {[-1, 1].map((s) => (
-        <group key={s} rotation={[0, 0, 0.22 * s]}>
-          <RoundedBox args={[0.82, 0.07, 1.12]} radius={0.03} position={[0.43 * s, 0, 0]} castShadow>
-            <meshStandardMaterial color="#6c7bff" roughness={0.5} />
-          </RoundedBox>
-          <RoundedBox args={[0.74, 0.06, 1.02]} radius={0.02} position={[0.4 * s, 0.05, 0]}>
-            <meshStandardMaterial color="#fffdf5" />
-          </RoundedBox>
-        </group>
-      ))}
+    <group rotation={[0.15, 0.4, 0.12]}>
+      {/* bìa */}
+      <RoundedBox args={[1.0, 1.3, 0.34]} radius={0.06} smoothness={4} castShadow>
+        <meshPhysicalMaterial color="#5b6cff" roughness={0.45} clearcoat={0.5} />
+      </RoundedBox>
+      {/* ruột sách lộ ra 3 cạnh */}
+      <RoundedBox args={[0.94, 1.22, 0.26]} radius={0.03} position={[0.05, 0, 0]}>
+        <meshStandardMaterial color="#fffaf0" roughness={0.9} />
+      </RoundedBox>
+      {/* gáy sách */}
+      <RoundedBox args={[0.12, 1.32, 0.38]} radius={0.05} position={[-0.47, 0, 0]}>
+        <meshPhysicalMaterial color="#4352e0" roughness={0.4} clearcoat={0.5} />
+      </RoundedBox>
+      {/* trái tim trên bìa */}
+      <mesh position={[0.05, 0.12, 0.18]} rotation={[0, 0, Math.PI]} scale={0.22}>
+        <extrudeGeometry args={[HEART, { depth: 0.25, bevelEnabled: true, bevelSize: 0.12, bevelThickness: 0.12, bevelSegments: 5 }]} />
+        <meshPhysicalMaterial color="#ff7eb6" roughness={0.3} clearcoat={1} />
+      </mesh>
+      {/* dải đánh dấu trang */}
+      <mesh position={[0.25, -0.75, 0.05]}>
+        <boxGeometry args={[0.1, 0.35, 0.02]} />
+        <meshStandardMaterial color="#ffc23d" />
+      </mesh>
     </group>
   );
 }
+
+const HEART = (() => {
+  const h = new THREE.Shape();
+  h.moveTo(0, -0.3);
+  h.bezierCurveTo(0, -0.6, -0.6, -0.6, -0.6, -0.15);
+  h.bezierCurveTo(-0.6, 0.25, -0.2, 0.45, 0, 0.75);
+  h.bezierCurveTo(0.2, 0.45, 0.6, 0.25, 0.6, -0.15);
+  h.bezierCurveTo(0.6, -0.6, 0, -0.6, 0, -0.3);
+  return h;
+})();
 
 export function SoonIsland({ kind, seed }: { kind: "moments" | "achievements" | "info"; seed: number }) {
   const grass = kind === "moments" ? "#9be36a" : kind === "achievements" ? "#8ad85c" : "#86d96e";

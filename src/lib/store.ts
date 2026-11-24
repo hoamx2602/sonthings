@@ -98,7 +98,7 @@ export const useApp = create<AppState>((set, get) => ({
 
   openIsland(id) {
     sound.whoosh();
-    const panel: Panel = id === "arena" ? "arena" : id && id !== "hub" ? "soon" : null;
+    const panel: Panel = id === "arena" ? "arena" : id === "moments" || id === "achievements" || id === "info" ? "soon" : null;
     set({ focus: id, panel });
   },
   closePanel() {

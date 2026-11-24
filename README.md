@@ -50,7 +50,7 @@ supabase/schema.sql       bảng dữ liệu
 ```
 
 ## Mẫu 3D
-Cây, lâu đài, nhà, giàn giáo… là mẫu **CC0** của KayKit (Kay Lousberg). Xem `public/models/README.md`.
+Cây, lâu đài, nhà, giàn giáo… là mẫu **CC0** của KayKit (Kay Lousberg); ô tô ở đảo Đường đua là Toy Car Kit **CC0** của Kenney. Xem `public/models/README.md`.
 Nhân vật Con/Bố/Mẹ hiện vẫn là nhân vật tròn tự dựng, có thể thay bằng file `.glb` tạo bằng AI sau.
 
 ## Luật huy chương

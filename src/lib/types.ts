@@ -50,4 +50,4 @@ export interface Settings {
   quality: "high" | "low";
 }
 
-export type IslandId = "hub" | "arena" | "moments" | "achievements" | "info";
+export type IslandId = "hub" | "arena" | "moments" | "achievements" | "info" | "race";

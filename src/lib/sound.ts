@@ -234,6 +234,17 @@ class SoundEngine {
     this.tone(this.sfxBus, midiFreq("E4"), t + 0.96, 0.8, "triangle", 0.25, midiFreq("D4"));
   }
 
+  /** Còi xe "bíp bíp", mỗi xe một tông */
+  honk(variant = 0) {
+    if (!this.ctx || !this.settings?.sfx) return;
+    const t = this.t0;
+    const base = [440, 523, 392, 587][variant % 4];
+    for (const dt of [0, 0.18]) {
+      this.tone(this.sfxBus, base, t + dt, 0.14, "square", 0.12);
+      this.tone(this.sfxBus, base * 1.26, t + dt, 0.14, "square", 0.08);
+    }
+  }
+
   tada() {
     if (!this.ctx || !this.settings?.sfx) return;
     const t = this.t0;
