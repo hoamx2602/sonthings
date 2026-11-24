@@ -17,11 +17,11 @@ Không cấu hình gì thì dữ liệu được lưu trong trình duyệt (loca
 
 1. Tạo project miễn phí tại https://supabase.com
 2. Vào **SQL Editor**, dán nội dung `supabase/schema.sql` rồi bấm **Run**
-3. Vào **Project Settings → API**, copy `Project URL` và `anon public key`
+3. Vào **Project Settings → API Keys**, copy `Project URL` và **Publishable key** (dạng `sb_publishable_...`)
 4. Tạo file `.env.local` (theo mẫu `.env.example`):
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
    ```
 5. Chạy lại `npm run dev`. Trong Cài đặt sẽ hiện "☁️ Dữ liệu lưu trên Supabase".
 
@@ -30,7 +30,7 @@ Không cấu hình gì thì dữ liệu được lưu trong trình duyệt (loca
 ```bash
 npx vercel            # lần đầu: đăng nhập và tạo project
 npx vercel env add NEXT_PUBLIC_SUPABASE_URL
-npx vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+npx vercel env add NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 npx vercel --prod
 ```
 

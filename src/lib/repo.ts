@@ -16,7 +16,9 @@ export interface Repo {
 }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Supabase bản mới dùng "publishable key" (sb_publishable_...) thay cho anon key cũ.
+// Vẫn nhận tên cũ để project tạo trước đây không bị hỏng.
+const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 type MatchRow = {
   id: string;

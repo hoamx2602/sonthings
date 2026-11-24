@@ -17,8 +17,8 @@ create table if not exists public.app_settings (
   updated_at timestamptz not null default now()
 );
 
--- Web dùng anon key nên cần cho phép đọc/ghi.
--- Lưu ý: ai có link web + anon key đều đọc/ghi được. Giai đoạn sau
+-- Web dùng publishable key (chạy với vai trò "anon" của Postgres) nên cần cho phép đọc/ghi.
+-- Lưu ý: ai có link web + publishable key đều đọc/ghi được. Giai đoạn sau
 -- có thể thêm đăng nhập (Supabase Auth) để khoá chặt hơn.
 alter table public.matches enable row level security;
 alter table public.app_settings enable row level security;
