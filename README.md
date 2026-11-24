@@ -41,11 +41,17 @@ Trên iPad: mở link bằng Safari → nút Chia sẻ → **Thêm vào MH chín
 ```
 app/                      Next.js (layout, trang chính, CSS)
 src/lib/                  dữ liệu, thống kê/huy chương, âm thanh, store
-src/components/world/     thế giới 3D (đảo, cầu, mây, nhân vật)
+src/components/world/     thế giới 3D (đảo, cầu, mây, nhân vật, mẫu KayKit)
+public/models/            mẫu 3D .glb
+scripts/build-models.sh   gộp mẫu 3D đã chọn
 src/components/arena/     bảng Đấu trường (thi đấu, tỉ số, lịch sử, huy hiệu)
 src/components/ui/        avatar, huy chương 3D, màn ăn mừng, cài đặt
 supabase/schema.sql       bảng dữ liệu
 ```
+
+## Mẫu 3D
+Cây, lâu đài, nhà, giàn giáo… là mẫu **CC0** của KayKit (Kay Lousberg). Xem `public/models/README.md`.
+Nhân vật Con/Bố/Mẹ hiện vẫn là nhân vật tròn tự dựng, có thể thay bằng file `.glb` tạo bằng AI sau.
 
 ## Luật huy chương
 - Mỗi trận thắng được 1 huy chương. Thắng liên tiếp **3 ngày** thì lên 🥈, **7 ngày** thì lên 🥇

@@ -1,5 +1,7 @@
 "use client";
-import { OrbitControls } from "@react-three/drei";
+import { Environment, Lightformer, OrbitControls, SoftShadows } from "@react-three/drei";
+import { EffectComposer, N8AO, SMAA, ToneMapping } from "@react-three/postprocessing";
+import { ToneMappingMode } from "postprocessing";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
@@ -202,20 +204,28 @@ function Scene() {
   const quality = useApp((s) => s.settings.quality);
   return (
     <>
-      <hemisphereLight args={["#ffffff", "#a5d8ff", 1.1]} />
-      <ambientLight intensity={0.35} />
+      <hemisphereLight args={["#ffffff", "#bfe3ff", 0.6]} />
       <directionalLight
         castShadow={quality === "high"}
-        position={[14, 24, 12]}
-        intensity={1.8}
+        position={[14, 26, 12]}
+        intensity={2.2}
+        color="#fff6e6"
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-26}
-        shadow-camera-right={26}
-        shadow-camera-top={26}
-        shadow-camera-bottom={-26}
-        shadow-bias={-0.0005}
+        shadow-camera-left={-28}
+        shadow-camera-right={28}
+        shadow-camera-top={28}
+        shadow-camera-bottom={-28}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.04}
       />
-      <fog attach="fog" args={["#d6eeff", 45, 110]} />
+      {/* Ánh sáng môi trường mềm như studio, không cần tải file HDR */}
+      <Environment resolution={128} frames={1} environmentIntensity={0.9}>
+        <Lightformer form="rect" intensity={2.5} color="#ffffff" position={[0, 8, 0]} rotation-x={Math.PI / 2} scale={[20, 20, 1]} />
+        <Lightformer form="rect" intensity={1.2} color="#cfe8ff" position={[-8, 2, 4]} rotation-y={Math.PI / 2} scale={[20, 6, 1]} />
+        <Lightformer form="rect" intensity={1.2} color="#fff0d6" position={[8, 2, -4]} rotation-y={-Math.PI / 2} scale={[20, 6, 1]} />
+        <Lightformer form="rect" intensity={0.6} color="#d9f2ff" position={[0, -6, 0]} rotation-x={-Math.PI / 2} scale={[20, 20, 1]} />
+      </Environment>
+      <fog attach="fog" args={["#d6eeff", 50, 120]} />
 
       {ISLANDS.map((isl) => (
         <group key={isl.id} position={isl.pos}>
@@ -234,7 +244,7 @@ function Scene() {
       <LabelProjector />
 
       <group position={[1, -3, -17]}>
-        <DecoIsland radius={2} seed={61} />
+        <DecoIsland radius={2.2} seed={61} building="windmill" />
       </group>
       <group position={[-22, -1.5, -3]}>
         <DecoIsland radius={1.6} seed={71} />
@@ -246,14 +256,14 @@ function Scene() {
         <DecoIsland radius={1.8} seed={91} />
       </group>
       <group position={[-20, 2, -16]}>
-        <DecoIsland radius={1.2} seed={101} />
+        <DecoIsland radius={1.6} seed={101} building="tower" />
       </group>
 
-      <Cloud position={[-20, 6, -12]} scale={1.6} speed={0.4} />
-      <Cloud position={[8, 8, -20]} scale={2.2} speed={0.25} />
-      <Cloud position={[18, 3, 10]} scale={1.3} speed={0.35} />
-      <Cloud position={[-6, -6, 8]} scale={2} speed={0.2} />
-      <Cloud position={[-28, -2, 12]} scale={1.4} speed={0.3} />
+      <Cloud position={[-20, 6, -12]} scale={1.6} speed={0.4} seed={1} />
+      <Cloud position={[8, 8, -20]} scale={2.2} speed={0.25} seed={2} />
+      <Cloud position={[18, 3, 10]} scale={1.3} speed={0.35} seed={3} />
+      <Cloud position={[-6, -6, 8]} scale={2} speed={0.2} seed={4} />
+      <Cloud position={[-28, -2, 12]} scale={1.4} speed={0.3} seed={5} />
     </>
   );
 }
@@ -267,11 +277,19 @@ export default function World() {
       shadows={quality === "high"}
       dpr={quality === "high" ? [1, 2] : [1, 1.25]}
       camera={{ position: HOME_CAM.pos.toArray() as V3, fov: 42, near: 0.5, far: 200 }}
-      gl={{ antialias: true, alpha: true }}
+      gl={{ antialias: quality !== "high", alpha: true, toneMapping: THREE.NeutralToneMapping }}
       onPointerMissed={() => closePanel()}
     >
+      {quality === "high" && <SoftShadows size={22} samples={12} focus={0.5} />}
       <Suspense fallback={null}>
         <Scene />
+        {quality === "high" && (
+          <EffectComposer multisampling={0} enableNormalPass={false}>
+            <N8AO halfRes aoRadius={1.2} distanceFalloff={0.6} intensity={2.4} color="#3d3566" />
+            <SMAA />
+            <ToneMapping mode={ToneMappingMode.NEUTRAL} />
+          </EffectComposer>
+        )}
       </Suspense>
       <CameraRig />
       <OrbitControls

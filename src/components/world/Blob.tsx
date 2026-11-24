@@ -49,8 +49,8 @@ export function Blob({
       </mesh>
       <group ref={body}>
         <mesh castShadow position={[0, 0.48, 0]} scale={[1, 0.92, 1]}>
-          <sphereGeometry args={[0.5, 32, 32]} />
-          <meshStandardMaterial color={color} roughness={0.35} />
+          <sphereGeometry args={[0.5, 48, 40]} />
+          <meshPhysicalMaterial color={color} roughness={0.4} clearcoat={0.8} clearcoatRoughness={0.25} sheen={0.6} sheenColor="#ffffff" />
         </mesh>
         {/* mắt */}
         {[-0.16, 0.16].map((x) => (
